@@ -6,8 +6,12 @@ from Crypto.Util.Padding import pad
 import requests, urllib3
 from flask import Flask, request, jsonify, Response as FlaskResponse
 
+# আপনার প্রজেক্টের ডিরেক্টরি থেকে MajoRLoGinrEs_pb2 ইমপোর্ট করা
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-import MajoRLoGinrEs_pb2
+try:
+    import MajoRLoGinrEs_pb2
+except ImportError:
+    MajoRLoGinrEs_pb2 = None  # প্রোটোবাফ ফাইল না থাকলে এরর এড়াতে
 
 urllib3.disable_warnings()
 
@@ -35,6 +39,284 @@ PLATFORM_MAP = {1:"Facebook",2:"VK",4:"Guest",7:"Google",8:"Huawei"}
 
 app = Flask(__name__)
 
+# ------------------------------------------------------------------
+# ✨ রুট পাথ (/) এর জন্য HTML ল্যান্ডিং পেজ
+# ------------------------------------------------------------------
+@app.route('/')
+def home():
+    html_content = """
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>JWT_GEN - Free Fire JWT API</title>
+        <style>
+            * { margin: 0; padding: 0; box-sizing: border-box; }
+            body {
+                font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                background: linear-gradient(135deg, #0f0c29, #302b63, #24243e);
+                color: #fff;
+                min-height: 100vh;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 20px;
+            }
+            .container {
+                background: rgba(255, 255, 255, 0.05);
+                backdrop-filter: blur(10px);
+                border: 1px solid rgba(255, 255, 255, 0.1);
+                border-radius: 20px;
+                padding: 40px;
+                max-width: 700px;
+                width: 100%;
+                box-shadow: 0 25px 50px rgba(0,0,0,0.5);
+                text-align: center;
+            }
+            h1 {
+                font-size: 3em;
+                font-weight: 800;
+                background: linear-gradient(45deg, #00d2ff, #3a7bd5);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                margin-bottom: 10px;
+                letter-spacing: 2px;
+            }
+            .subtitle {
+                color: #a0a0c0;
+                margin-bottom: 30px;
+                font-size: 1.1em;
+            }
+            .card {
+                background: rgba(0, 0, 0, 0.3);
+                border-radius: 12px;
+                padding: 20px;
+                margin-bottom: 25px;
+                text-align: left;
+                border-left: 4px solid #00d2ff;
+            }
+            .card h2 {
+                font-size: 1.3em;
+                color: #00d2ff;
+                margin-bottom: 10px;
+            }
+            code {
+                display: block;
+                background: #1a1a2e;
+                padding: 12px;
+                border-radius: 8px;
+                font-family: 'Courier New', monospace;
+                word-break: break-all;
+                font-size: 0.9em;
+                color: #e0e0e0;
+                border: 1px solid #333;
+            }
+            .highlight {
+                color: #ffd700;
+                font-weight: bold;
+            }
+            .btn {
+                display: inline-block;
+                margin-top: 20px;
+                padding: 12px 30px;
+                background: linear-gradient(45deg, #00d2ff, #3a7bd5);
+                color: #fff;
+                text-decoration: none;
+                border-radius: 50px;
+                font-weight: bold;
+                transition: transform 0.2s, box-shadow 0.2s;
+            }
+            .btn:hover {
+                transform: translateY(-2px);
+                box-shadow: 0 10px 20px rgba(0, 210, 255, 0.4);
+            }
+            .footer {
+                margin-top: 30px;
+                font-size: 0.85em;
+                color: #666;
+            }
+            .status-badge {
+                display: inline-block;
+                background: #00d2ff;
+                color: #0f0c29;
+                padding: 4px 12px;
+                border-radius: 20px;
+                font-size: 0.8em;
+                font-weight: bold;
+                margin-bottom: 20px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>JWT_GEN</h1>
+            <p class="subtitle">Free Fire JWT Token Generator API</p>
+            <div class="status-badge">✅ API is Online</div>
+
+            <div class="card">
+                <h2>🔗 API Endpoint</h2>
+                <code>https://jwt-gen-ob55-mu.vercel.app/token?key=Alone&uid={uid}&password={password}</code>
+            </div>
+
+            <div class="card">
+                <h2>📋 Example Request</h2>
+                <code>https://jwt-gen-ob55-mu.vercel.app/token?key=Alone&uid=4422453894&password=a_2B84Z_BY_SPIDEERIO_GAMING_ITTWM</code>
+            </div>
+
+            <div class="card">
+                <h2>⚙️ Parameters</h2>
+                <ul style="list-style: none; padding: 0;">
+                    <li><span class="highlight">key</span> — Your API key (Alone)</li>
+                    <li><span class="highlight">uid</span> — Free Fire UID</li>
+                    <li><span class="highlight">password</span> — Account password</li>
+                </ul>
+            </div>
+
+            <a href="/token?key=Alone&uid=4422453894&password=a_2B84Z_BY_SPIDEERIO_GAMING_ITTWM" class="btn" target="_blank">Test API</a>
+
+            <p class="footer">© 2026 JWT_GEN — Powered by Vercel</p>
+        </div>
+    </body>
+    </html>
+    """
+    return html_content
+
+# ------------------------------------------------------------------
+# 🔑 টোকেন API (আপনার মূল লজিক অপরিবর্তিত)
+# ------------------------------------------------------------------
+@app.route('/token', methods=['GET'])
+def api_token():
+    start=time.time()
+    if request.args.get("key","").strip()!=API_KEY:
+        return jsonify({"status":"error","message":"Invalid API key"}),403
+    uid=request.args.get("uid","").strip()
+    password=request.args.get("password","").strip()
+    if not uid or not password:
+        return jsonify({"status":"error","message":"Missing uid or password"}),400
+    if not uid.isdigit() or len(uid)<8:
+        return jsonify({"status":"error","message":"Invalid UID"}),400
+
+    at,oid,plat=get_oauth(uid,password)
+    if not at:
+        return jsonify({"status":"error","message":"OAuth failed"}),400
+
+    host,rv,client_ver=get_version_config()
+    payload=build_payload(oid,at,client_ver=client_ver)
+    body=encrypt_api(payload)
+    try:
+        ctx=ssl._create_unverified_context()
+        conn=http.client.HTTPSConnection(host,context=ctx,timeout=8)
+        conn.request("POST","/MajorLogin",body=body,headers={
+            'User-Agent':'UnityPlayer/2018.4.12f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)',
+            'Accept':'*/*','Accept-Encoding':'deflate, gzip','Authorization':'Bearer',
+            'X-Ga':'v1 1','X-Ga-Sv':'1794143783','Releaseversion':rv,
+            'Content-Type':'application/x-www-form-urlencoded','X-Unity-Version':'2018.4.12f1',
+        })
+        resp=conn.getresponse(); raw=resp.read()
+        if resp.getheader("Content-Encoding")=="gzip":
+            with gzip.GzipFile(fileobj=BytesIO(raw)) as f2: raw=f2.read()
+        conn.close()
+    except Exception as e:
+        return jsonify({"status":"error","message":str(e)}),400
+
+    ban_reason,ban_time,ban_expire=decode_ban(raw)
+    if ban_reason:
+        is_perm=(ban_expire==0)
+        import datetime as _dt2
+        ff_tz2=_dt2.timezone(_dt2.timedelta(hours=8))
+        bds=_dt2.datetime.fromtimestamp(int(ban_time),tz=ff_tz2).strftime("%Y-%m-%d %H:%M:%S") if ban_time>0 else _dt2.datetime.now(ff_tz2).strftime("%Y-%m-%d %H:%M:%S")
+        brief=get_account_brief_info(str(oid),at,host,rv)
+        b_nick  = brief.get("nickname","Unknown") if brief else "Unknown"
+        b_level = brief.get("level","Unknown") if brief else "Unknown"
+        b_region= brief.get("region","Unknown") if brief else "Unknown"
+        b_accid = brief.get("account_id",None) if brief else None
+        b_success = bool(b_nick and b_nick!="Unknown")
+        if is_perm:
+            return FlaskResponse(json.dumps({
+                "success":b_success,
+                "nickname":b_nick,
+                "account_id":b_accid,
+                "level":b_level,
+                "region":b_region,
+                "reason":ban_reason,
+                "ban_type":"permanent_ban",
+                "ban_date":bds,
+                "remaining_time":"Permanent",
+                "timestamp":int(ban_time) if ban_time else int(time.time()),
+                "access_token":at,
+                "open_id":str(oid),
+                "elapsed":f"{time.time()-start:.2f}s",
+            },ensure_ascii=False,indent=2),status=200,mimetype="application/json")
+        else:
+            expire_ts=int(ban_time)+int(ban_expire) if ban_time>0 else int(time.time())+int(ban_expire)
+            import datetime as _dt
+            ff_tz=_dt.timezone(_dt.timedelta(hours=8))
+            es=_dt.datetime.fromtimestamp(expire_ts,tz=ff_tz).strftime("%Y-%m-%d %H:%M:%S")
+            rem=int(ban_expire)
+            if rem>0:
+                d=rem//86400; h=(rem%86400)//3600; m=(rem%3600)//60; s=rem%60
+                rs=f"{d}d {h}h {m}m {s}s"
+            else: rs="Expired"
+            now=int(time.time())
+            return FlaskResponse(json.dumps({
+                "success":b_success,
+                "nickname":b_nick,
+                "account_id":b_accid,
+                "level":b_level,
+                "region":b_region,
+                "reason":ban_reason,
+                "ban_type":"temporary_ban",
+                "ban_date":bds,
+                "ban_expire":es,
+                "remaining_time":rs,
+                "timestamp":now,
+                "access_token":at,
+                "open_id":str(oid),
+                "elapsed":f"{time.time()-start:.2f}s",
+            },ensure_ascii=False,indent=2),status=200,mimetype="application/json")
+
+    res=None
+    for blob in [raw[RESPONSE_HEADER_LEN:] if len(raw)>RESPONSE_HEADER_LEN else b"",raw]:
+        if not blob: continue
+        try:
+            if MajoRLoGinrEs_pb2:
+                m=MajoRLoGinrEs_pb2.MajorLoginRes(); m.ParseFromString(blob)
+                if m.account_id>0 and m.token: res=m; break
+        except: pass
+    if not res or not res.token:
+        return jsonify({"status":"error","message":"No JWT token received"}),400
+
+    jp=decode_jwt(res.token)
+    account_id=str(jp.get("account_id",res.account_id or ""))
+    lock_region=res.lock_region or jp.get("lock_region",DEFAULT_REGION)
+    platform_id=int(jp.get("external_type",4))
+    platform_str=PLATFORM_MAP.get(platform_id,"Guest")
+    rel_version=jp.get("release_version",rv)
+    server_url=res.server_url or ""
+    city=res.ip_city or ""
+    state=res.ip_subdivision or ""
+    status_str=res.agora_environment or "live"
+
+    gps_key=REGION_TO_GPS.get(lock_region.upper(),"BD")
+    gps_url=GPS_URLS.get(gps_key,GPS_URLS["BD"])
+    nickname=""; level=""
+    if account_id:
+        pf=get_player_info(account_id,res.token,gps_url,rel_version)
+        nickname,level=extract_nickname_level(pf)
+
+    elapsed=time.time()-start
+    return FlaskResponse(json.dumps({
+        "success":True,"nickname":nickname,"account_id":account_id,"level":level,
+        "region":lock_region,"platform":platform_str,"platformId":platform_id,
+        "release_version":rel_version,"access_token":at,"open_id":str(oid),
+        "api":server_url,"status":status_str,"state":state,"city":city,
+        "elapsed":f"{elapsed:.2f}s","token":res.token,
+    },ensure_ascii=False,indent=2),status=200,mimetype="application/json")
+
+# ------------------------------------------------------------------
+# সহায়ক ফাংশনসমূহ (আপনার মূল কোড থেকে অপরিবর্তিত)
+# ------------------------------------------------------------------
 def encrypt_api(b):
     return AES.new(AES_KEY,AES.MODE_CBC,AES_IV).encrypt(pad(b,16))
 
@@ -157,7 +439,6 @@ def build_payload(open_id,access_token,region="BD",client_ver=CLIENT_VERSION):
         107:"c8e41b7a93f02d56e1a94c7b8203f5d1"}
     return build_proto(fields)
 
-
 def get_account_brief_info(open_id, access_token, login_host, rv):
     try:
         proto = create_field(1, open_id)
@@ -266,135 +547,9 @@ def extract_nickname_level(fields):
             if lv: level=str(lv)
     return nickname.strip(),level.strip()
 
-@app.get("/token")
-def api_token():
-    start=time.time()
-    if request.args.get("key","").strip()!=API_KEY:
-        return jsonify({"status":"error","message":"Invalid API key"}),403
-    uid=request.args.get("uid","").strip()
-    password=request.args.get("password","").strip()
-    if not uid or not password:
-        return jsonify({"status":"error","message":"Missing uid or password"}),400
-    if not uid.isdigit() or len(uid)<8:
-        return jsonify({"status":"error","message":"Invalid UID"}),400
-
-    at,oid,plat=get_oauth(uid,password)
-    if not at:
-        return jsonify({"status":"error","message":"OAuth failed"}),400
-
-    host,rv,client_ver=get_version_config()
-    payload=build_payload(oid,at,client_ver=client_ver)
-    body=encrypt_api(payload)
-    try:
-        ctx=ssl._create_unverified_context()
-        conn=http.client.HTTPSConnection(host,context=ctx,timeout=8)
-        conn.request("POST","/MajorLogin",body=body,headers={
-            'User-Agent':'UnityPlayer/2018.4.12f1 (UnityWebRequest/1.0, libcurl/8.5.0-DEV)',
-            'Accept':'*/*','Accept-Encoding':'deflate, gzip','Authorization':'Bearer',
-            'X-Ga':'v1 1','X-Ga-Sv':'1794143783','Releaseversion':rv,
-            'Content-Type':'application/x-www-form-urlencoded','X-Unity-Version':'2018.4.12f1',
-        })
-        resp=conn.getresponse(); raw=resp.read()
-        if resp.getheader("Content-Encoding")=="gzip":
-            with gzip.GzipFile(fileobj=BytesIO(raw)) as f2: raw=f2.read()
-        conn.close()
-    except Exception as e:
-        return jsonify({"status":"error","message":str(e)}),400
-
-    ban_reason,ban_time,ban_expire=decode_ban(raw)
-    if ban_reason:
-        is_perm=(ban_expire==0)
-        import datetime as _dt2
-        ff_tz2=_dt2.timezone(_dt2.timedelta(hours=8))
-        bds=_dt2.datetime.fromtimestamp(int(ban_time),tz=ff_tz2).strftime("%Y-%m-%d %H:%M:%S") if ban_time>0 else _dt2.datetime.now(ff_tz2).strftime("%Y-%m-%d %H:%M:%S")
-        brief=get_account_brief_info(str(oid),at,host,rv)
-        b_nick  = brief.get("nickname","Unknown") if brief else "Unknown"
-        b_level = brief.get("level","Unknown") if brief else "Unknown"
-        b_region= brief.get("region","Unknown") if brief else "Unknown"
-        b_accid = brief.get("account_id",None) if brief else None
-        b_success = bool(b_nick and b_nick!="Unknown")
-        if is_perm:
-            return FlaskResponse(json.dumps({
-                "success":b_success,
-                "nickname":b_nick,
-                "account_id":b_accid,
-                "level":b_level,
-                "region":b_region,
-                "reason":ban_reason,
-                "ban_type":"permanent_ban",
-                "ban_date":bds,
-                "remaining_time":"Permanent",
-                "timestamp":int(ban_time) if ban_time else int(time.time()),
-                "access_token":at,
-                "open_id":str(oid),
-                "elapsed":f"{time.time()-start:.2f}s",
-            },ensure_ascii=False,indent=2),status=200,mimetype="application/json")
-        else:
-            expire_ts=int(ban_time)+int(ban_expire) if ban_time>0 else int(time.time())+int(ban_expire)
-            import datetime as _dt
-            ff_tz=_dt.timezone(_dt.timedelta(hours=8))
-            es=_dt.datetime.fromtimestamp(expire_ts,tz=ff_tz).strftime("%Y-%m-%d %H:%M:%S")
-            rem=int(ban_expire)
-            if rem>0:
-                d=rem//86400; h=(rem%86400)//3600; m=(rem%3600)//60; s=rem%60
-                rs=f"{d}d {h}h {m}m {s}s"
-            else: rs="Expired"
-            now=int(time.time())
-            return FlaskResponse(json.dumps({
-                "success":b_success,
-                "nickname":b_nick,
-                "account_id":b_accid,
-                "level":b_level,
-                "region":b_region,
-                "reason":ban_reason,
-                "ban_type":"temporary_ban",
-                "ban_date":bds,
-                "ban_expire":es,
-                "remaining_time":rs,
-                "timestamp":now,
-                "access_token":at,
-                "open_id":str(oid),
-                "elapsed":f"{time.time()-start:.2f}s",
-            },ensure_ascii=False,indent=2),status=200,mimetype="application/json")
-
-    res=None
-    for blob in [raw[RESPONSE_HEADER_LEN:] if len(raw)>RESPONSE_HEADER_LEN else b"",raw]:
-        if not blob: continue
-        try:
-            m=MajoRLoGinrEs_pb2.MajorLoginRes(); m.ParseFromString(blob)
-            if m.account_id>0 and m.token: res=m; break
-        except: pass
-    if not res or not res.token:
-        return jsonify({"status":"error","message":"No JWT token received"}),400
-
-    jp=decode_jwt(res.token)
-    account_id=str(jp.get("account_id",res.account_id or ""))
-    lock_region=res.lock_region or jp.get("lock_region",DEFAULT_REGION)
-    platform_id=int(jp.get("external_type",4))
-    platform_str=PLATFORM_MAP.get(platform_id,"Guest")
-    rel_version=jp.get("release_version",rv)
-    server_url=res.server_url or ""
-    city=res.ip_city or ""
-    state=res.ip_subdivision or ""
-    status_str=res.agora_environment or "live"
-
-    gps_key=REGION_TO_GPS.get(lock_region.upper(),"BD")
-    gps_url=GPS_URLS.get(gps_key,GPS_URLS["BD"])
-    nickname=""; level=""
-    if account_id:
-        pf=get_player_info(account_id,res.token,gps_url,rel_version)
-        nickname,level=extract_nickname_level(pf)
-
-    elapsed=time.time()-start
-    return FlaskResponse(json.dumps({
-        "success":True,"nickname":nickname,"account_id":account_id,"level":level,
-        "region":lock_region,"platform":platform_str,"platformId":platform_id,
-        "release_version":rel_version,"access_token":at,"open_id":str(oid),
-        "api":server_url,"status":status_str,"state":state,"city":city,
-        "elapsed":f"{elapsed:.2f}s","token":res.token,
-    },ensure_ascii=False,indent=2),status=200,mimetype="application/json")
-
-# Vercel-এ এই block কখনোই run হবে না (module import হয়, __main__ না)
+# ------------------------------------------------------------------
+# লোকাল রান (Vercel-এ এটি এক্সিকিউট হবে না)
+# ------------------------------------------------------------------
 if __name__=="__main__":
     print(f"JWT API running on port {WEB_PORT}")
     app.run(host="0.0.0.0",port=WEB_PORT,debug=False,threaded=True)
